@@ -965,6 +965,7 @@ Modified by:
 				font-weight: 700;
 				padding: 16px 32px;
 				text-align: center;
+				border-radius: 25px;
 			}
 
 			.columns .image:hover img {
@@ -992,6 +993,15 @@ Modified by:
 				-moz-column-count: 1;
 				-webkit-column-count: 1;
 				column-count: 1;
+			}
+
+			.columns .image img {
+				transition: .2s ease-in-out;
+				opacity: 0.8;
+			}
+			.columns .image .imgoverlay {
+				transition: .2s ease-in-out;
+				opacity: 1;
 			}
 
 		}
