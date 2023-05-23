@@ -576,7 +576,7 @@ input[type="checkbox"] {
     .control-label {
       text-align: right;
       margin-bottom: 0;
-      padding-top: ($padding-base-vertical + 1); // Default padding plus a border
+      padding-top: calc($padding-base-vertical + 1px); // Default padding plus a border
     }
   }
 
@@ -585,7 +585,7 @@ input[type="checkbox"] {
   // Reposition the icon because it's now within a grid column and columns have
   // `position: relative;` on them. Also accounts for the grid gutter padding.
   .has-feedback .form-control-feedback {
-    right: floor(($grid-gutter-width / 2));
+    right: floor(calc($grid-gutter-width / 2));
   }
 
   // Form group sizes
@@ -595,7 +595,7 @@ input[type="checkbox"] {
   .form-group-lg {
     @media (min-width: $screen-sm-min) {
       .control-label {
-        padding-top: (($padding-large-vertical * $line-height-large) + 1);
+        padding-top: calc(($padding-large-vertical * $line-height-large) + 1px);
         font-size: $font-size-large;
       }
     }
@@ -603,7 +603,7 @@ input[type="checkbox"] {
   .form-group-sm {
     @media (min-width: $screen-sm-min) {
       .control-label {
-        padding-top: ($padding-small-vertical + 1);
+        padding-top: calc($padding-small-vertical + 1px);
         font-size: $font-size-small;
       }
     }

@@ -1,3 +1,57 @@
+;jQuery.expr[':'].icontains = function(a, i, m) {
+   return jQuery(a).text().toUpperCase()
+       .indexOf(m[3].toUpperCase()) >= 0;
+};
+const scrollToSearchBar = function(delay = 400) {
+    $("html").animate({
+        scrollTop: $(".search__input").offset().top - $(".navbar").outerHeight()
+    }, delay);
+};
+;$(".search__input").on("click", scrollToSearchBar);
+;$(".search__input").on("keydown", scrollToSearchBar);
+;$(".search__input").on("keyup", function() {
+    $('mark').contents().unwrap();
+    var hasResults = false;
+    var valThis = this.value;
+    $('#fh5co-pricing > .pricing-section > .container > .experience_cards').find('.col-md-12').each(function() {
+        if ($(this).attr('data-search') !== 'false') {
+            $(this).find(".fh5co-post > *:icontains("+valThis+")").each(function() {
+                var text = $(this).text();
+                var textL = text.toLowerCase();
+                var position = textL.indexOf(valThis.toLowerCase());
+
+                var regex = new RegExp(valThis, 'ig');
+                text = text.replace(regex, (match, $1) => {
+                    // Return the replacement
+                    return '<mark>' + match + '</mark>';
+                });
+
+
+                if(valThis !== "") $(this).html(text);
+            });
+        }
+
+        if ($(this).find('mark').length > 0) {
+            var currMarkLoc = $(this).find("mark").first().position().top;
+            var currScroll = $(this).find("mark").parent().scrollTop();
+            var scrollOffset = $(this).find("mark").parent().position().top;
+            var desiredScroll = currMarkLoc + currScroll - scrollOffset;
+            $(this).find("mark").parent().animate({ scrollTop: desiredScroll}, 200);
+
+            $(this).show();
+            hasResults = true;
+        } else if ( valThis == "") {
+            $(this).show();
+            hasResults = true;
+        } else {
+            $(this).hide();
+        }
+    });
+    $(".no-results-text").prop('hidden', hasResults);
+    Waypoint.refreshAll();
+});
+
+
 ;(function () {
 	
 	'use strict';
@@ -88,7 +142,7 @@
 		    	navActive($(this.element).data('section'));
 		  	}
 		}, {
-	  		offset: '150px'
+	  		offset: '350px'
 		});
 
 		$section.waypoint(function(direction) {
@@ -96,7 +150,7 @@
 		    	navActive($(this.element).data('section'));
 		  	}
 		}, {
-		  	offset: function() { return -$(this.element).height() + 155; }
+		  	offset: function() { return -$(this.element).height() + 355; }
 		});
 
 	};
@@ -147,7 +201,6 @@
 	var contentWayPoint = function() {
 		var i = 0;
 		$('.animate-box').waypoint( function( direction ) {
-
 			if( direction === 'down' && !$(this.element).hasClass('animated-fast') ) {
 				
 				i++;
@@ -195,3 +248,16 @@
 
 
 }());
+/* Disabled for now until I figure out an elegant way to add non-text content
+$(document).ready(function() {
+    $('.magnific-popup-parent').magnificPopup({
+        delegate: 'div.col-md-12',
+        type: 'inline',
+        callbacks: {
+            elementParse: function(item) {
+                item.src = $(item.el).clone();
+            },
+        },
+    });
+});
+*/

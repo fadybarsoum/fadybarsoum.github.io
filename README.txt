@@ -1,6 +1,12 @@
 ./Fady Barsoum
 Personal Website and Portfolio
 Created April 2017
+Last Modified June 2023
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Use `sass --watch sass/style.scss css/style.css` (and any
+other relevant files) to build CSS changes immediately
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 TEMPLATE CREDITS
