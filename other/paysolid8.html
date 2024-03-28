@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PaySolid8</title>
+</head>
+<body data-role="page" data-theme="b">
+    <h1 data-role="header">PaySolid8</h1>
+    <form>
+        <h2>1 - Load Bank Transactions CSV File</h2>
+        <input type="file" id="fileInput" accept=".csv" onchange="loadCSV()">
+        <!-- <button id="fileButton" onclick="loadCSV()" class="ui-btn ui-btn-inline">Load Bank Transactions CSV File</button> -->
+        <hr>
+        <h2>2 - Load EFT XLS File</h2>
+        <input type="file" id="fileInput2" accept=".xls" onchange="loadXLS()">
+        <!-- <button id="fileButton2" onclick="loadXLS()" class="ui-btn ui-btn-inline">Load EFT XLS File</button> -->
+        <hr>
+        <h2>3 - ConSolid8!</h2>
+        <button type="button" onclick="conSolid8()" class="ui-btn ui-btn-inline">ConSolid8!</button>
+        <hr>
+    </form>
+    <div data-role="content">
+        <div id="diff" style="overflow-x:scroll;"></div>
+        <hr>
+        <div id="csvData" hidden=true></div>
+        <div id="xlsData" hidden=true></div>
+    </div>
+
+    <script>
+        var bankTx;
+        var eft;
+        function loadXLS() {
+            // Clear previous run
+            const diffElem = document.getElementById('diff');
+            diffElem.innerHTML = "";
+            const fileInput = document.getElementById('fileInput2');
+            const xlsData = document.getElementById('xlsData');
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const contents = event.target.result;
+                const lines = contents.split('\n').slice(1);
+
+                if (lines.length < 2) {
+                    alert('XLS file does not contain header or data.');
+                    return;
+                }
+
+                const headers = lines[0].trim().replace("\"", "").split('\t');
+                const records = [];
+                var errors = 0;
+                for (let i = 1; i < lines.length-2; i++) {
+                    const fields = lines[i].trim().split("\t");
+                    if (fields.length !== headers.length) {
+                        // alert(`Incorrect number of fields in line ${i + 1}: "${lines[i].trim()}"`);
+                        errors += 1;
+                        continue;
+                    }
+                    const record = {};
+                    for (let j = 0; j < headers.length; j++) {
+                        record[headers[j]] = fields[j];
+                    }
+// console.log(i+2, record);
+                    records.push(record);
+                }
+                eft = records;
+                xlsData.innerText = JSON.stringify(records, null, 2);
+                alert(`Successfully found ${records.length} posted payments!\n${errorMsg(errors)}`);
+            };
+
+            reader.onerror = function() {
+                alert('Error occurred while reading file!');
+            };
+
+            if (file) {
+                reader.readAsText(file);
+            } else {
+                alert('Please select a file!');
+            }
+        }
+
+        function loadCSV() {
+            // Clear previous run
+            const diffElem = document.getElementById('diff');
+            diffElem.innerHTML = "";
+            const fileInput = document.getElementById('fileInput');
+            const csvData = document.getElementById('csvData');
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const contents = event.target.result;
+                const lines = contents.split('\n').slice(6);
+
+                if (lines.length < 2) {
+                    alert('CSV file does not contain header or data.');
+                    return;
+                }
+
+                const headers = lines[0].trim().split(',');
+                const records = [];
+                var errors = 0;
+// skip first line
+                for (let i = 2; i < lines.length-1; i++) {
+                    var fields;
+                    try {
+                        fields = parseLine(lines[i].trim());
+                    } catch (err) {
+                        // alert(`Failed to parse line ${i+7}: "${lines[i].trim()}" due to ${err}`)
+                        errors += 1;
+                        continue;
+                    } 
+                    if (fields.length !== headers.length) {
+                        // alert(`Error parsing line ${i + 1}: Incorrect number of fields.`);
+                        errors += 1;
+                        continue;
+                    }
+                    const record = {};
+                    for (let j = 0; j < headers.length; j++) {
+                        record[headers[j]] = fields[j];
+                    }
+
+                    if (record["Description"].includes("HCCLAIM")) {
+                        delete record["Running Bal."];
+// console.log(i+7, record);
+                        records.push(record);
+                    }
+                }
+                bankTx = records;
+                csvData.innerText = JSON.stringify(records, null, 2);
+                alert(`Successfully found ${records.length} HCCLAIM payments!\n${errorMsg(errors)}`);
+            };
+
+            reader.onerror = function() {
+                alert('Error occurred while reading file!');
+            };
+
+            if (file) {
+                reader.readAsText(file);
+            } else {
+                alert('Please select a file!');
+            }
+        }
+
+        function conSolid8(){
+            // Clear previous run
+            const diffElem = document.getElementById('diff');
+            diffElem.innerHTML = "";
+
+            // Check both files have been successfully processed
+            if ( (eft == null) || (bankTx == null) ) {
+                alert('Please click load on both files first and make sure there are no errors! Then try again.');
+                return
+            }
+
+            var matching = [];
+            var amtDiff = [];
+            var pmtMissing = [];
+            var eftMissing = [];
+            var foundPmtis = new Array(bankTx.length).fill(false);
+
+// Loop through all posted TX from OpenDental
+            for (let postedi in eft) {
+                const posted = eft[postedi];
+                const id = posted["Check#"];
+                var found = false;
+// Loop through all bank payments looking for a matching ID
+                for (let pmti in bankTx) {
+                    const pmt = bankTx[pmti];
+                    if (pmt["Description"].includes(id)) {
+                        found = true;
+                        foundPmtis[pmti] = true;
+// Amounts match (remove commas), all good!
+                        if (stringAmountsEqual(posted,pmt)) {
+                            matching.push({"ID":id, "PostDate":posted["Date"]});
+                        } else { 
+// Amounts do not match
+                            amtDiff.push({"ID":id, "PostDate":posted["Date"], "PostAmt": posted["Amount"].replace(",",""), "PmtAmt": pmt["Amount"].replace(",","")});
+                        }
+                        break;
+                    }
+                }
+// No matching bank payment found for this posted TX from OpenDental
+                if (!found) {
+                    pmtMissing.push(posted);
+                }
+            }
+// Remaining bank payments without a matching posted TX from OpenDental
+            for (let pmti in bankTx) {
+                if (!foundPmtis[pmti]) {
+                    eftMissing.push(bankTx[pmti]);
+                }
+            }
+
+            console.log("amtDiff", amtDiff);
+            // Consolidate amount diff ones which add up to bank payment amount
+            const cPost = {}
+            const cPostFiltered = [];
+            for (let pi in amtDiff) {
+                const posted = amtDiff[pi];
+                const id = posted["ID"];
+                if (cPost[id] == null) {
+                    cPost[id] = {"ID": id, "Total Posted Amounts": parseFloat(posted["PostAmt"]), "Actual Bank Payment": parseFloat(posted["PmtAmt"]), "Number of Posted Payments": 1, "pis": [pi] };
+                } else {
+                    cPost[id]["Total Posted Amounts"] += parseFloat(posted["PostAmt"]);
+                    cPost[id]["Number of Posted Payments"] += 1;
+                    cPost[id]["pis"].push(pi);
+                    if (cPost[id]["Total Posted Amounts"] == cPost[id]["Actual Bank Payment"]) {
+                        for (let dpi in cPost[id]["pis"]) {
+                            delete amtDiff[cPost[id]["pis"][dpi]];
+                        }
+                        delete cPost[id]["pis"]; 
+                        cPostFiltered.push(cPost[id]);
+                    }
+                }
+            }
+            console.log("cPost", cPost);
+            console.log("cPostFiltered", cPostFiltered);
+
+// Display tables
+            diffElem.innerHTML += "<h1 style='color:red'>Payments Missing: " + pmtMissing.length + "</h1>"
+            diffElem.appendChild(buildTable(pmtMissing));
+            diffElem.innerHTML += "<hr><h1 style='color:red'>Need to Post: " + eftMissing.length + "</h1>"
+            diffElem.appendChild(buildTable(eftMissing));
+            diffElem.innerHTML += "<hr><h1 style='color:orange'>Amount Different: " + amtDiff.length + "</h1>"
+            diffElem.appendChild(buildTable(amtDiff));
+            diffElem.innerHTML += "<br><h2 style='color:green'>Consolidated EFTs in 1 payment: " + cPostFiltered.length + "</h2>"
+            diffElem.appendChild(buildTable(cPostFiltered));
+            diffElem.innerHTML += "<hr><h1 style='color:green'>All Good: " + matching.length + "</h1>"
+            diffElem.appendChild(buildTable(matching));
+        }
+
+        function buildTable(records) {
+            if (records.length != 0) {
+                const newTable = document.createElement("table");
+                newTable.setAttribute("data-role","table")
+                const header = document.createElement("thead");
+                newTable.appendChild(header);
+                const headers = records[0];
+                for (let h in headers) {
+                    const th = document.createElement("th");
+                    th.innerText = h;
+                    header.appendChild(th);
+                }
+                const body = document.createElement("tbody");
+                newTable.appendChild(body);
+                for (let pmti in records) {
+                    const pmt = records[pmti];
+                    const tr = document.createElement("tr");
+                    for (let h in headers) {
+                        const td = document.createElement("td");
+                        td.innerText = pmt[h];
+                        tr.appendChild(td);
+                    }
+                    body.appendChild(tr);
+                }
+                return newTable;
+            }
+            return document.createElement("div");
+        }
+
+        function parseLine(line, delim=",") {
+            const res = [];
+            var token = "";
+            for (var i = 0; i < line.length; i++) {
+                if (line[i] == '"') {
+                    token = line.substring(i+1).split('"', 1)[0];
+                    res.push(token);
+                    i += token.length + 2;
+                    token = "";
+                } else if (line[i] == delim) {
+                    res.push(token);
+                    token = "";
+                } else {
+                    token = token.concat(line[i]);
+                }
+            }
+            if (token != "") {
+                res.push(token);
+            }
+            return res;
+        }
+
+        function stringAmountsEqual(p1, p2) {
+            return Math.abs(parseFloat(p1["Amount"].replace(",","")) - parseFloat(p2["Amount"].replace(",",""))) < 0.0001;
+        }
+
+        function errorMsg(errors) {
+            return errors?`(Ran into ${errors} unexpected errors...)`:"";
+        }
+    </script>
+    <style type="text/css">
+        thead th,
+        tbody tr:last-child {
+            border-bottom: 1px solid #d6d6d6; /* non-RGBA fallback */
+            border-bottom: 1px solid rgba(0,0,0,.2);
+        }
+        tbody th,
+        tbody td {
+            border-bottom: 1px solid #e6e6e6; /* non-RGBA fallback  */
+            border-bottom: 1px solid rgba(0,0,0,.1);
+        }
+        tbody tr:last-child th,
+        tbody tr:last-child td {
+            border-bottom: 0;
+        }
+        tbody tr:nth-child(odd) td,
+        tbody tr:nth-child(odd) th {
+            background-color: #eeeeee; /* non-RGBA fallback  */
+            background-color: rgba(0,0,0,.08);
+        }
+        td, th {
+            border: solid 1px #444;
+            padding-inline: 8px;
+        }
+    </style>
+</body>
+</html>
