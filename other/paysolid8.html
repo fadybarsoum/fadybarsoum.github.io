@@ -35,8 +35,7 @@
         var eft;
         function loadXLS() {
             // Clear previous run
-            const diffElem = document.getElementById('diff');
-            diffElem.innerHTML = "";
+            clearPreviousRun();
             const fileInput = document.getElementById('fileInput2');
             const xlsData = document.getElementById('xlsData');
 
@@ -87,8 +86,7 @@
 
         function loadCSV() {
             // Clear previous run
-            const diffElem = document.getElementById('diff');
-            diffElem.innerHTML = "";
+            clearPreviousRun();
             const fileInput = document.getElementById('fileInput');
             const csvData = document.getElementById('csvData');
 
@@ -151,8 +149,7 @@
 
         function conSolid8(){
             // Clear previous run
-            const diffElem = document.getElementById('diff');
-            diffElem.innerHTML = "";
+            clearPreviousRun();
 
             // Check both files have been successfully processed
             if ( (eft == null) || (bankTx == null) ) {
@@ -179,7 +176,7 @@
                         foundPmtis[pmti] = true;
 // Amounts match (remove commas), all good!
                         if (stringAmountsEqual(posted,pmt)) {
-                            matching.push({"ID":id, "PostDate":posted["Date"]});
+                            matching.push({"ID":id, "PostDate":posted["Date"], "Amount":pmt["Amount"]});
                         } else { 
 // Amounts do not match
                             amtDiff.push({"ID":id, "PostDate":posted["Date"], "PostAmt": posted["Amount"].replace(",",""), "PmtAmt": pmt["Amount"].replace(",","")});
@@ -199,7 +196,6 @@
                 }
             }
 
-            console.log("amtDiff", amtDiff);
             // Consolidate amount diff ones which add up to bank payment amount
             const cPost = {}
             const cPostFiltered = [];
@@ -221,19 +217,29 @@
                     }
                 }
             }
-            console.log("cPost", cPost);
-            console.log("cPostFiltered", cPostFiltered);
+
+            // Display Summary
+            const diffElem = document.getElementById('diff');
+            diffElem.innerHTML += `<h1>Summary</h1><br><table>
+            <tr><td>Bank HCCLAIM Payments in BoA file</td><td>${bankTx.length}</td></tr>
+            <tr><td>OpenDental Posted EFTs in OpenDental file</td><td>${eft.length}</td></tr>
+            <tr><td style="color:green">All Good!<br>(bank payment matches EFT amount)</td><td>${matching.length}</td></tr>
+            <tr><td style="color:green">Consolidated EFTs in 1 payment<br>(multiple EFTs which add up to 1 bank payment)</td><td>${cPostFiltered.length} bank payments</td></tr>
+            <tr><td style="color:orange">Amount Different<br>(EFTs where the bank payment with same ID has a different amount, includes EFTs that add up to 1 payment above)</td><td>${amtDiff.length} EFTs</td></tr>
+            <tr><td style="color:red">Need to Post<br>(bank payment with no matching EFT)</td><td>${eftMissing.length}</td></tr>
+            <tr><td style="color:red">Payments Missing<br>(OpenDental EFT with no matching bank payment)</td><td>${pmtMissing.length}</td></tr>
+            </table><hr>`;
 
 // Display tables
-            diffElem.innerHTML += "<h1 style='color:red'>Payments Missing: " + pmtMissing.length + "</h1>"
+            diffElem.innerHTML += `<h1 style='color:red'>Payments Missing: ${pmtMissing.length}</h1>`;
             diffElem.appendChild(buildTable(pmtMissing));
-            diffElem.innerHTML += "<hr><h1 style='color:red'>Need to Post: " + eftMissing.length + "</h1>"
+            diffElem.innerHTML += `<hr><h1 style='color:red'>Need to Post: ${eftMissing.length}</h1>`;
             diffElem.appendChild(buildTable(eftMissing));
-            diffElem.innerHTML += "<hr><h1 style='color:orange'>Amount Different: " + amtDiff.length + "</h1>"
+            diffElem.innerHTML += `<hr><h1 style='color:orange'>Amount Different: ${amtDiff.length}</h1>`;
             diffElem.appendChild(buildTable(amtDiff));
-            diffElem.innerHTML += "<br><h2 style='color:green'>Consolidated EFTs in 1 payment: " + cPostFiltered.length + "</h2>"
+            diffElem.innerHTML += `<br><h2 style='color:green'>Consolidated EFTs in 1 payment: ${cPostFiltered.length}</h2>`;
             diffElem.appendChild(buildTable(cPostFiltered));
-            diffElem.innerHTML += "<hr><h1 style='color:green'>All Good: " + matching.length + "</h1>"
+            diffElem.innerHTML += `<hr><h1 style='color:green'>All Good: ${matching.length}</h1>`;
             diffElem.appendChild(buildTable(matching));
         }
 
@@ -294,6 +300,11 @@
 
         function errorMsg(errors) {
             return errors?`(Ran into ${errors} unexpected errors...)`:"";
+        }
+
+        function clearPreviousRun() {
+            const diffElem = document.getElementById('diff');
+            diffElem.innerHTML = "";
         }
     </script>
     <style type="text/css">
