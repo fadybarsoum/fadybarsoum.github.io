@@ -122,7 +122,15 @@
                     return;
                 }
 
+// validate headers
                 const headers = lines[0].trim().replace("\"", "").split('\t');
+                const headersSet = new Set(headers);
+                const expectedHeaders = new Set(["Check#", "Amount", "Date"]);
+                if (!expectedHeaders.isSubsetOf(headersSet)) {
+                    $('#xlsResult > .res_error').html(`XLS file missing expected headers on line 2 (missing: ${Array.from(expectedHeaders.difference(headersSet))})`).show();
+                    return;
+                }
+
                 const records = [];
                 var errors = 0;
                 for (let i = 1; i < lines.length-2; i++) {
@@ -176,7 +184,15 @@
                     return;
                 }
 
+// validate headers
                 const headers = lines[0].trim().split(',');
+                const headersSet = new Set(headers);
+                const expectedHeaders = new Set(["Description", "Amount"]);
+                if (!expectedHeaders.isSubsetOf(headersSet)) {
+                    $('#csvResult > .res_error').html(`CSV file missing expected headers on line 7 (missing: ${Array.from(expectedHeaders.difference(headersSet))})`).show();
+                    return;
+                }
+
                 const records = [];
                 var errors = 0;
 // skip first line
