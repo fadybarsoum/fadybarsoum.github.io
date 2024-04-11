@@ -136,12 +136,18 @@
                 for (let i = 1; i < lines.length-2; i++) {
                     const fields = lines[i].trim().split("\t");
                     if (fields.length !== headers.length) {
+                        console.log("XLS: wrong number of fields: ", headers, fields);
                         errors += 1;
                         continue;
                     }
                     const record = {};
                     for (let j = 0; j < headers.length; j++) {
                         record[headers[j]] = fields[j];
+                    }
+                    if (record["Check#"].length < 4) {
+                        console.log("XLS: short Check#: ", fields);
+                        errors += 1;
+                        continue
                     }
 // console.log(i+2, record);
                     records.push(record);
@@ -201,10 +207,12 @@
                     try {
                         fields = parseLine(lines[i].trim());
                     } catch (err) {
+                        console.log("CSV: parse error: ", err, fields);
                         errors += 1;
                         continue;
                     } 
                     if (fields.length !== headers.length) {
+                        console.log("CSV: wrong number of fields: ", headers, fields);
                         errors += 1;
                         continue;
                     }
@@ -260,7 +268,7 @@
 // Loop through all bank payments looking for a matching ID
                 for (let pmti in bankTx) {
                     const pmt = bankTx[pmti];
-                    if (pmt["Description"].includes(id)) {
+                    if (matchCheckIds(pmt,id)) {
                         found = true;
                         foundPmtis[pmti] = true;
 // Amounts match (remove commas), all good!
@@ -386,6 +394,16 @@
             return Math.abs(parseFloat(p1["Amount"].replace(",","")) - parseFloat(p2["Amount"].replace(",",""))) < 0.0001;
         }
 
+        function matchCheckIds(pmt, id) {
+            try {
+                const pmtTrn = pmt["Description"].split("TRN*")[1].split("*")[1];
+                return pmtTrn.endsWith(id);
+            } catch (err) {
+                console.log("consolid8: matchCheckIds failed: ", err, pmt);
+                return false;
+            }
+        }
+
         function errorMsg(errors) {
             return errors?`(Ran into ${errors} unexpected errors...)`:"";
         }
@@ -415,8 +433,8 @@
             // Convert to CSV
             const csvRows = [];
             const headers = Object.keys(data[0]);
-            csvRows.push(headers.join(","));
-            csvRows.push(...data.map((record) => Object.values(record).join(",")));
+            csvRows.push(`"${headers.join('","')}"`);
+            csvRows.push(...data.map((record) => `"${Object.values(record).map((v) => v.replace('"',"")).join('","')}"`));
             const blob = new Blob([csvRows.join("\n")], { type: 'text/csv' }); 
 
             // Download CSV
@@ -451,6 +469,10 @@
         td, th {
             border: solid 1px #444;
             padding-inline: 8px;
+        }
+        #pmtMissingTable > table > tbody > tr > td:nth-child(4) { /* Provider field */
+            max-width: 200px;
+            overflow-wrap: break-word;
         }
         .save_button {
             cursor: pointer;
