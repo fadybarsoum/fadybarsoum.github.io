@@ -443,7 +443,7 @@
             const csvRows = [];
             const headers = Object.keys(data[0]);
             csvRows.push(`"${headers.join('","')}"`);
-            csvRows.push(...data.map((record) => `"${Object.values(record).map((v) => v.replace('"',"")).join('","')}"`));
+            csvRows.push(...data.map((record) => `"${Object.values(record).map((v) => v.toString().replace('"',"")).join('","')}"`));
             const blob = new Blob([csvRows.join("\n")], { type: 'text/csv' }); 
 
             // Download CSV
