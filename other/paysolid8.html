@@ -18,8 +18,8 @@
 <body data-role="page" data-theme="b">
     <img id="logo"/>
     <form id="fileInputForm">
-        <h2>1 - Load Bank Transactions CSV File</h2>
-        <input type="file" id="fileInput" accept=".csv" onchange="loadCSV()">
+        <h2>1 - Load Bank Transactions DAT File</h2>
+        <input type="file" id="fileInput" accept=".dat" onchange="loadCSV()">
         <div id="csvResult">
             <span class="res_success"></span>
             <span class="res_error"></span>
@@ -200,7 +200,7 @@
                 }
 
 // validate headers
-                const headers = lines[0].trim().split(',');
+                const headers = lines[0].trim().split('\t');
                 const headersSet = new Set(headers);
                 const expectedHeaders = new Set(["Description", "Amount"]);
                 if (!expectedHeaders.isSubsetOf(headersSet)) {
@@ -214,7 +214,7 @@
                 for (let i = 2; i < lines.length-1; i++) {
                     var fields;
                     try {
-                        fields = parseLine(lines[i].trim());
+                        fields = parseLine(lines[i].trim(), "\t");
                     } catch (err) {
                         console.log("CSV: parse error: ", err, fields);
                         errors += 1;
