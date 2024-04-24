@@ -312,7 +312,7 @@
                     cPost[id]["Total EFT Amount Sum"] += parseFloat(posted["EFT Amt"]);
                     cPost[id]["Number of EFT Payments"] += 1;
                     cPost[id]["pis"].push(pi);
-                    if (cPost[id]["Total EFT Amount Sum"] == cPost[id]["Actual Bank Payment"]) {
+                    if (floatAmountsEqual(cPost[id]["Total EFT Amount Sum"], cPost[id]["Actual Bank Payment"])) {
                         for (let dpi in cPost[id]["pis"]) {
                             delete amtDiff[cPost[id]["pis"][dpi]];
                         }
@@ -362,12 +362,12 @@
                 }
                 const body = document.createElement("tbody");
                 newTable.appendChild(body);
-                for (let pmti in records) {
+                for (let pmti in records.filter((e) => e != null)) {
                     const pmt = records[pmti];
                     const tr = document.createElement("tr");
                     for (let h in headers) {
                         const td = document.createElement("td");
-                        td.innerText = pmt[h];
+                        td.innerText = pmt[h].toFixed? pmt[h].toFixed(2) : pmt[h];
                         tr.appendChild(td);
                     }
                     body.appendChild(tr);
@@ -400,7 +400,11 @@
         }
 
         function stringAmountsEqual(p1, p2) {
-            return Math.abs(parseFloat(p1["Amount"].replace(",","")) - parseFloat(p2["Amount"].replace(",",""))) < 0.0001;
+            return floatAmountsEqual(parseFloat(p1["Amount"].replace(",","")), parseFloat(p2["Amount"].replace(",","")));
+        }
+
+        function floatAmountsEqual(f1, f2) {
+            return Math.abs(f1 - f2) < 0.0001;
         }
 
         function matchCheckIds(pmt, id) {
