@@ -25,7 +25,7 @@
             <span class="res_error"></span>
         </div>
         <hr>
-        <h2>2 - Load EFT XLS File</h2>
+        <h2>2 - Load OpenDental EFT XLS File</h2>
         <input type="file" id="fileInput2" accept=".xls" onchange="loadXLS()">
         <div id="xlsResult">
             <span class="res_success"></span>
@@ -54,27 +54,27 @@
                     <td class="save_button">💾</td>
                 </tr>
                 <tr>
-                    <td style="color:green">All Good!<br>(bank payment matches EFT amount)</td>
+                    <td style="color:green">All Good!<br>(bank payment matches OpenDental EFT amount exactly)</td>
                     <td><a id="matching" href="#matchingLength"/></td>
                     <td class="save_button">💾</td>
                 </tr>
                 <tr>
-                    <td style="color:green">Consolidated EFTs in 1 payment<br>(multiple EFTs which add up to 1 bank payment)</td>
-                    <td><a id="cPostFiltered" href="#cPostFilteredLength"/></td>
+                    <td style="color:green">Multiple OD EFTs in 1 BoA payment<br>(multiple OpenDental EFTs which add up to 1 BoA bank payment exactly)</td>
+                    <td><a id="multiClaimPayments" href="#multiClaimPaymentsLength"/></td>
                     <td class="save_button">💾</td>
                 </tr>
                 <tr>
-                    <td style="color:orange">Amount Different<br>(EFTs where the bank payment with same ID has a different amount, includes EFTs that add up to 1 payment above)</td>
+                    <td style="color:orange">Amounts Different<br>(OD EFTs where the BoA payment with the same ID has a different amount)<br>(count includes multiple OD EFTs that add up to 1 BoA payment above)</td>
                     <td><a id="amtDiff" href="#amtDiffLength"/></td>
                     <td class="save_button">💾</td>
                 </tr>
                 <tr>
-                    <td style="color:red">EFT Missing<br>(bank payment with no matching EFT)</td>
+                    <td style="color:red">OpenDental EFT Missing<br>(BoA payment with no matching OpenDental EFT)</td>
                     <td><a id="eftMissing" href="#eftMissingLength"/></td>
                     <td class="save_button">💾</td>
                 </tr>
                 <tr>
-                    <td style="color:red">Payments Missing<br>(OpenDental EFT with no matching bank payment)</td>
+                    <td style="color:red">BoA Payments Missing<br>(OpenDental EFT with no matching BoA payment)</td>
                     <td><a id="pmtMissing" href="#pmtMissingLength"/></td>
                     <td class="save_button">💾</td>
                 </tr>
@@ -82,17 +82,17 @@
         </div>
         <hr>
         <div id="diff" style="overflow-x:scroll;">
-            <h1 style='color:red'>Payments Missing: <span id="pmtMissingLength"></span></h1>
+            <h1 style='color:red'>BoA Payments Missing: <span id="pmtMissingLength"></span></h1>
             <div id="pmtMissingTable"></div>
             <hr>
-            <h1 style='color:red'>EFT Missing: <span id="eftMissingLength"></span></h1>
+            <h1 style='color:red'>OpenDental EFT Missing: <span id="eftMissingLength"></span></h1>
             <div id="eftMissingTable"></div>
             <hr>
-            <h1 style='color:orange'>Amount Different: <span id="amtDiffLength"></span></h1>
+            <h1 style='color:orange'>Amounts Different: <span id="amtDiffLength"></span> OpenDental EFTs</h1>
             <div id="amtDiffTable"></div>
             <br>
-            <h2 style='color:green'>Consolidated EFTs in 1 payment: <span id="cPostFilteredLength"></span></h2>
-            <div id="cPostFilteredTable"></div>
+            <h2 style='color:green'>Multiple OD EFTs in 1 BoA payment: <span id="multiClaimPaymentsLength"></span> BoA payments</h2>
+            <div id="multiClaimPaymentsTable"></div>
             <hr>
             <h1 style='color:green'>All Good: <span id="matchingLength"></span></h1>
             <div id="matchingTable"></div>
@@ -107,7 +107,7 @@
         var eft;
 
         var cPost;
-        var cPostFiltered;
+        var multiClaimPayments;
         var matching;
         var amtDiff;
         var pmtMissing;
@@ -282,10 +282,10 @@
                         foundPmtis[pmti] = true;
 // Amounts match (remove commas), all good!
                         if (stringAmountsEqual(posted,pmt)) {
-                            matching.push({"EFT Date":posted["Date"], "ID":id, "Amount":pmt["Amount"]});
+                            matching.push({"OD EFT Date":posted["Date"], "ID":id, "Amount":pmt["Amount"]});
                         } else { 
 // Amounts do not match
-                            amtDiff.push({"ID":id, "EFT Date":posted["Date"], "EFT Amt": posted["Amount"].replace(",",""), "Pmt Amt": pmt["Amount"].replace(",","")});
+                            amtDiff.push({"ID":id, "OD EFT Date":posted["Date"], "OD EFT Amt": posted["Amount"].replace(",",""), "BoA Pmt Amt": pmt["Amount"].replace(",","")});
                         }
                         break;
                     }
@@ -307,17 +307,17 @@
                 const posted = amtDiff[pi];
                 const id = posted["ID"];
                 if (cPost[id] == null) {
-                    cPost[id] = {"ID": id, "Total EFT Amount Sum": parseFloat(posted["EFT Amt"]), "Actual Bank Payment": parseFloat(posted["Pmt Amt"]), "Number of EFT Payments": 1, "pis": [pi] };
+                    cPost[id] = {"ID": id, "Total OD EFTs Amounts Sum": parseFloat(posted["OD EFT Amt"]), "Actual BoA Bank Payment": parseFloat(posted["BoA Pmt Amt"]), "Number of OD EFTs": 1, "pis": [pi] };
                 } else {
-                    cPost[id]["Total EFT Amount Sum"] += parseFloat(posted["EFT Amt"]);
-                    cPost[id]["Number of EFT Payments"] += 1;
+                    cPost[id]["Total OD EFTs Amounts Sum"] += parseFloat(posted["OD EFT Amt"]);
+                    cPost[id]["Number of OD EFTs"] += 1;
                     cPost[id]["pis"].push(pi);
-                    if (floatAmountsEqual(cPost[id]["Total EFT Amount Sum"], cPost[id]["Actual Bank Payment"])) {
+                    if (floatAmountsEqual(cPost[id]["Total OD EFTs Amounts Sum"], cPost[id]["Actual BoA Bank Payment"])) {
                         for (let dpi in cPost[id]["pis"]) {
                             delete amtDiff[cPost[id]["pis"][dpi]];
                         }
                         delete cPost[id]["pis"]; 
-                        cPostFiltered.push(cPost[id]);
+                        multiClaimPayments.push(cPost[id]);
                     }
                 }
             }
@@ -326,7 +326,7 @@
             $('#bankTx').html(`${bankTx.length} bank payments`);
             $('#eft').html(`${eft.length} EFTs`);
             $('#matching').html(`${matching.length} bank payments and EFTs`);
-            $('#cPostFiltered').html(`${cPostFiltered.length} bank payments`);
+            $('#multiClaimPayments').html(`${multiClaimPayments.length} bank payments`);
             $('#amtDiff').html(`${amtDiff.length} EFTs`);
             $('#eftMissing').html(`${eftMissing.length} bank payments`);
             $('#pmtMissing').html(`${pmtMissing.length} EFTs`);
@@ -338,8 +338,8 @@
             $('#eftMissingTable').html(buildTable(eftMissing));
             $('#amtDiffLength').text(amtDiff.length);
             $('#amtDiffTable').html(buildTable(amtDiff));
-            $('#cPostFilteredLength').text(cPostFiltered.length);
-            $('#cPostFilteredTable').html(buildTable(cPostFiltered));
+            $('#multiClaimPaymentsLength').text(multiClaimPayments.length);
+            $('#multiClaimPaymentsTable').html(buildTable(multiClaimPayments));
             $('#matchingLength').text(matching.length);
             $('#matchingTable').html(buildTable(matching));
 
@@ -349,6 +349,7 @@
         }
 
         function buildTable(records) {
+            records = records.filter((e) => e != null);
             if (records.length != 0) {
                 const newTable = document.createElement("table");
                 newTable.setAttribute("data-role","table")
@@ -362,7 +363,7 @@
                 }
                 const body = document.createElement("tbody");
                 newTable.appendChild(body);
-                for (let pmti in records.filter((e) => e != null)) {
+                for (let pmti in records) {
                     const pmt = records[pmti];
                     const tr = document.createElement("tr");
                     for (let h in headers) {
@@ -427,7 +428,7 @@
             $('#runResult > .res_error').hide();
 
             cPost = {}
-            cPostFiltered = [];
+            multiClaimPayments = [];
             matching = [];
             amtDiff = [];
             pmtMissing = [];
@@ -436,7 +437,7 @@
 
         $(".save_button").on("click", (event) => {
             // Retrieve data from global vars based on ID of sibling table cell
-            const dataName = event.target.previousElementSibling.id;
+            const dataName = event.target.previousElementSibling.firstChild.id;
             const data = window[dataName].filter((e) => e != null);
             if (data.length == 0) {
                 alert("No data to export!");
@@ -463,7 +464,7 @@
             var elementId = $(this).attr('id');
             // Scroll to the HTML element with the same id
             $('html, body').animate({
-              scrollTop: $(`#${elementId}Length`).offset().top;
+              scrollTop: $(`#${elementId}Length`).offset().top
             }, 1000);
         });   
     });
