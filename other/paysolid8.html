@@ -55,27 +55,27 @@
                 </tr>
                 <tr>
                     <td style="color:green">All Good!<br>(bank payment matches EFT amount)</td>
-                    <td id="matching"></td>
+                    <td><a id="matching" href="#matchingLength"/></td>
                     <td class="save_button">💾</td>
                 </tr>
                 <tr>
                     <td style="color:green">Consolidated EFTs in 1 payment<br>(multiple EFTs which add up to 1 bank payment)</td>
-                    <td id="cPostFiltered"></td>
+                    <td><a id="cPostFiltered" href="#cPostFilteredLength"/></td>
                     <td class="save_button">💾</td>
                 </tr>
                 <tr>
                     <td style="color:orange">Amount Different<br>(EFTs where the bank payment with same ID has a different amount, includes EFTs that add up to 1 payment above)</td>
-                    <td id="amtDiff"></td>
+                    <td><a id="amtDiff" href="#amtDiffLength"/></td>
                     <td class="save_button">💾</td>
                 </tr>
                 <tr>
                     <td style="color:red">EFT Missing<br>(bank payment with no matching EFT)</td>
-                    <td id="eftMissing"></td>
+                    <td><a id="eftMissing" href="#eftMissingLength"/></td>
                     <td class="save_button">💾</td>
                 </tr>
                 <tr>
                     <td style="color:red">Payments Missing<br>(OpenDental EFT with no matching bank payment)</td>
-                    <td id="pmtMissing"></td>
+                    <td><a id="pmtMissing" href="#pmtMissingLength"/></td>
                     <td class="save_button">💾</td>
                 </tr>
             </table>
@@ -457,6 +457,15 @@
             a.setAttribute('download', `PaySolid8 ${dataName} ${new Date().toLocaleString().replace(",", "")}.csv`); 
             a.click();
         });
+
+        $('#summary tr td:nth-child(2) a').click(function(){
+            // Get the id of the clicked element
+            var elementId = $(this).attr('id');
+            // Scroll to the HTML element with the same id
+            $('html, body').animate({
+              scrollTop: $(`#${elementId}Length`).offset().top;
+            }, 1000);
+        });   
     });
     </script>
     <style type="text/css">
