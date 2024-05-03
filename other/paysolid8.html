@@ -466,7 +466,31 @@
             $('html, body').animate({
               scrollTop: $(`#${elementId}Length`).offset().top
             }, 1000);
-        });   
+        });
+
+        const pageLoadDate = Date.now();
+        const updateFrequency = 10 * 60 * 1000; 
+
+        function checkForUpdate() {
+            const xhttp = new XMLHttpRequest();
+            xhttp.onload = function() {
+                const latestPageModifiedDate = Date.parse(this.getResponseHeader("Last-Modified"));
+                console.log(latestPageModifiedDate);
+                if (latestPageModifiedDate > pageLoadDate) {
+                    const confirmText = "You are looking at an outdated version of PaySolid8.\n\nIf you no longer need the results displayed on this page, click OK to refresh the tool.\n\nOtherwise, click CANCEL to return to your results for now. You will be asked again in 10 minutes."
+                    if (window.confirm(confirmText)) {
+                        location.reload();
+                    }
+                }
+            };
+            xhttp.onloadend = function() {
+                setTimeout(checkForUpdate, updateFrequency);
+            };
+            xhttp.open("GET", "../other/paysolid8.html", true);
+            xhttp.send();
+        }
+
+        setTimeout(checkForUpdate, updateFrequency);
     });
     </script>
     <style type="text/css">
