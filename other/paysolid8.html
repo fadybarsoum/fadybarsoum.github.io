@@ -18,7 +18,7 @@
 <body data-role="page" data-theme="b">
     <img id="logo"/>
     <form id="fileInputForm">
-        <h2>1 - Load Bank Transactions DAT File</h2>
+        <h2>1 - Load Bank Transactions DAT File ("tab-delimited Excel file")</h2>
         <input type="file" id="fileInput" accept=".dat" onchange="loadCSV()">
         <div id="csvResult">
             <span class="res_success"></span>
@@ -54,12 +54,12 @@
                     <td class="save_button">💾</td>
                 </tr>
                 <tr>
-                    <td style="color:green">All Good!<br>(bank payment matches OpenDental EFT amount exactly)</td>
+                    <td style="color:green">1 BoA and 1 OD Match Exactly<br>(1 BoA payment exactly matches the amount of 1 OpenDental EFT, mark in BoA as done)</td>
                     <td><a id="matching" href="#matchingLength"/></td>
                     <td class="save_button">💾</td>
                 </tr>
                 <tr>
-                    <td style="color:green">Multiple OD EFTs in 1 BoA payment<br>(multiple OpenDental EFTs which add up to 1 BoA bank payment exactly)</td>
+                    <td style="color:green">Multiple OD EFTs in 1 BoA payment<br>(multiple OpenDental EFTs which add up to 1 BoA bank payment exactly, mark in BoA as done)</td>
                     <td><a id="multiClaimPayments" href="#multiClaimPaymentsLength"/></td>
                     <td class="save_button">💾</td>
                 </tr>
@@ -94,7 +94,7 @@
             <h2 style='color:green'>Multiple OD EFTs in 1 BoA payment: <span id="multiClaimPaymentsLength"></span> BoA payments</h2>
             <div id="multiClaimPaymentsTable"></div>
             <hr>
-            <h1 style='color:green'>All Good: <span id="matchingLength"></span></h1>
+            <h1 style='color:green'>1 BoA and 1 OD Match Exactly: <span id="matchingLength"></span></h1>
             <div id="matchingTable"></div>
         </div>
         <hr>
@@ -285,7 +285,7 @@
                             matching.push({"OD EFT Date":posted["Date"], "ID":id, "Amount":pmt["Amount"]});
                         } else { 
 // Amounts do not match
-                            amtDiff.push({"ID":id, "OD EFT Date":posted["Date"], "OD EFT Amt": posted["Amount"].replace(",",""), "BoA Pmt Amt": pmt["Amount"].replace(",","")});
+                            amtDiff.push({"BoA Pmt Date": pmt["Date"], "ID":id, "OD EFT Date":posted["Date"], "OD EFT Amt": posted["Amount"].replace(",",""), "BoA Pmt Amt": pmt["Amount"].replace(",","")});
                         }
                         break;
                     }
@@ -307,7 +307,7 @@
                 const posted = amtDiff[pi];
                 const id = posted["ID"];
                 if (cPost[id] == null) {
-                    cPost[id] = {"ID": id, "Total OD EFTs Amounts Sum": parseFloat(posted["OD EFT Amt"]), "Actual BoA Bank Payment": parseFloat(posted["BoA Pmt Amt"]), "Number of OD EFTs": 1, "pis": [pi] };
+                    cPost[id] = {"BoA Pmt Date": posted["BoA Pmt Date"],"ID": id, "Total OD EFTs Amounts Sum": parseFloat(posted["OD EFT Amt"]), "Actual BoA Bank Payment": parseFloat(posted["BoA Pmt Amt"]), "Number of OD EFTs": 1, "pis": [pi] };
                 } else {
                     cPost[id]["Total OD EFTs Amounts Sum"] += parseFloat(posted["OD EFT Amt"]);
                     cPost[id]["Number of OD EFTs"] += 1;
