@@ -151,7 +151,11 @@
                     }
                     const record = {};
                     for (let j = 0; j < headers.length; j++) {
-                        record[headers[j]] = fields[j];
+                        if (headers[j] == "Date") {
+                            record[headers[j]] = fields[j].replaceAll("/", ".");
+                        } else {
+                            record[headers[j]] = fields[j];
+                        }
                     }
                     if (record["Check#"].length < 4) {
                         console.log("XLS: short Check#: ", fields);
@@ -227,7 +231,11 @@
                     }
                     const record = {};
                     for (let j = 0; j < headers.length; j++) {
-                        record[headers[j]] = fields[j];
+                        if (headers[j] == "Date") {
+                            record[headers[j]] = fields[j].replaceAll("/", ".");
+                        } else {
+                            record[headers[j]] = fields[j];
+                        }
                     }
 
                     if (record["Description"].includes("HCCLAIM")) {
