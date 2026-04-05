@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LA28 Ticket Planner</title>
+    <style>
+        :root {
+            --la-black: #000000;
+            --la-white: #ffffff;
+            --la-pink: #FF3366;
+            --la-yellow: #FFD100;
+            --la-blue: #00E1D9;
+            --bg-gray: #f4f4f4;
+            --border-color: #ddd;
+            --text-color: #000000;
+            --badge-bg: #eee;
+        }
+
+        body.dark-mode {
+            --la-white: #1e1e1e;
+            --bg-gray: #121212;
+            --border-color: #333333;
+            --text-color: #ffffff;
+            --badge-bg: #333333;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-gray);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        header {
+            background-color: #000000;
+            color: #ffffff;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 5px solid var(--la-pink);
+        }
+
+        .header-main {
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 { margin: 0; font-weight: 900; letter-spacing: -1px; }
+        .accent { color: var(--la-blue); }
+
+        .credit {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            color: var(--la-yellow);
+        }
+
+        .credit a {
+            color: #ffffff;
+            text-decoration: none;
+            border-bottom: 1px solid var(--la-blue);
+        }
+
+        .credit a:hover {
+            color: var(--la-blue);
+        }
+
+        .container {
+            display: flex;
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: var(--la-white);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: background-color 0.3s;
+        }
+
+        .schedule-panel { flex: 2; }
+        .plan-panel { flex: 1; position: sticky; top: 2rem; height: calc(100vh - 4rem); overflow-y: auto; }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        input, select, button {
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            background-color: var(--la-white);
+            color: var(--text-color);
+        }
+
+        input { flex: 1; min-width: 200px; }
+
+        button {
+            background-color: var(--text-color);
+            color: var(--la-white);
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: background 0.2s, opacity 0.2s;
+        }
+
+        body.dark-mode button { background-color: #444; color: #fff; }
+
+        button:hover { opacity: 0.8; }
+
+        /* Specifically targeted buttons */
+        button.add-btn { background-color: var(--la-blue); color: #000; }
+        button.add-btn:hover { background-color: #00c4bd; }
+
+        button.remove-btn { background-color: var(--badge-bg); color: var(--text-color); padding: 0.5rem; font-size: 0.8rem; }
+        button.remove-btn:hover { background-color: #ffcccc; color: red; }
+
+        .plan-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-actions h2 { margin: 0; }
+        .plan-actions .btn-group { display: flex; gap: 0.5rem; }
+
+        button.clear-btn { background-color: #ffcccc; color: #cc0000; }
+        body.dark-mode button.clear-btn { background-color: #552222; color: #ff8888; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th { background-color: #000000; color: #ffffff; cursor: pointer; }
+        th:hover { color: var(--la-yellow); }
+
+        .highlight { background-color: var(--la-yellow); color: #000; font-weight: bold; }
+
+        .warning-box {
+            background-color: #fff3cd;
+            color: #856404;
+            border-left: 5px solid var(--la-yellow);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+
+        body.dark-mode .warning-box { background-color: #332b00; color: #e6c84c; }
+
+        .warning-box.active { display: block; }
+
+        .danger { border-left-color: var(--la-pink); background-color: #f8d7da; color: #721c24; }
+        body.dark-mode .danger { background-color: #3d1a1f; color: #ffb3b8; }
+
+        .plan-item {
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .plan-details h4 { margin: 0 0 0.5rem 0; }
+        .plan-details p { margin: 0.2rem 0; font-size: 0.85rem; opacity: 0.8; }
+        .badges { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+        .badge { background: var(--badge-bg); padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-main">
+        <h1>LA28 <span class="accent">Ticket Planner</span></h1>
+        <div class="credit">
+            Data provided by <a href="https://www.reddit.com/r/olympics/comments/1sb5cce/i_made_a_google_sheet_csv_of_the_la28_olympic/" target="_blank">u/CertainMoose</a>
+        </div>
+    </div>
+    <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+</header>
+
+<div class="container">
+    <div class="panel schedule-panel">
+        <h2>Available Events</h2>
+
+        <div class="filters">
+            <input type="text" id="searchInput" placeholder="Search events, races, athletes..." oninput="renderSchedule()">
+            <select id="sportFilter" onchange="renderSchedule()">
+                <option value="">All Sports</option>
+            </select>
+            <select id="zoneFilter" onchange="renderSchedule()">
+                <option value="">All Zones</option>
+            </select>
+            <select id="dateFilter" onchange="renderSchedule()">
+                <option value="">All Dates</option>
+            </select>
+        </div>
+
+        <table id="scheduleTable">
+            <thead>
+            <tr>
+                <th onclick="setSort('Date')">Date ↕</th>
+                <th onclick="setSort('Start Time')">Time ↕</th>
+                <th onclick="setSort('Sport')">Sport ↕</th>
+                <th>Zone</th>
+                <th>Session Description</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="scheduleBody"></tbody>
+        </table>
+    </div>
+
+    <div class="panel plan-panel">
+        <div class="plan-actions">
+            <h2>My Plan</h2>
+            <div class="btn-group">
+                <button onclick="exportPlan()">Export CSV</button>
+                <button class="clear-btn" onclick="clearPlan()">Clear</button>
+            </div>
+        </div>
+
+        <div id="overlapWarning" class="warning-box danger">
+            <strong>Time Conflict!</strong> You have overlapping events scheduled.
+            <div id="overlapDetails"></div>
+        </div>
+
+        <div id="zoneWarning" class="warning-box">
+            <strong>Travel Warning!</strong> You have events in different zones on the same day.
+            <div id="zoneDetails"></div>
+        </div>
+
+        <div id="myPlanList"></div>
+    </div>
+</div>
+
+<footer style="background: #000000; color: #ffffff; text-align: center; padding: 2rem; margin-top: 4rem; border-top: 5px solid var(--la-blue);">
+    <p style="margin: 0; font-size: 0.9rem; opacity: 0.8;">
+        Special thanks to <strong>u/CertainMoose</strong> on Reddit for the incredible effort in parsing
+        the LA28 competition schedule into a usable format for the community.
+    </p>
+</footer>
+
+<script>
+    let schedule = [];
+    let myPlan = JSON.parse(localStorage.getItem('la28_plan')) || [];
+    let currentSort = { column: 'Date', asc: true };
+
+    if (localStorage.getItem('la28_dark_mode') === 'true') {
+        document.body.classList.add('dark-mode');
+    }
+
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('la28_dark_mode', document.body.classList.contains('dark-mode'));
+    }
+
+    function parseCSV(text) {
+        const lines = text.split('\n');
+        if (lines.length < 2) return [];
+
+        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+        const result = [];
+
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+
+            let row = [];
+            let inQuotes = false;
+            let value = '';
+
+            for (let char of lines[i]) {
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    row.push(value.trim());
+                    value = '';
+                } else {
+                    value += char;
+                }
+            }
+            row.push(value.trim());
+
+            const obj = {};
+            for (let j = 0; j < headers.length; j++) {
+                let val = row[j] ? row[j].replace(/^"|"$/g, '') : '';
+
+                // Format the Date column right as we parse it
+                if (headers[j] === 'Date' && val) {
+                    const dateObj = new Date(val);
+                    if (!isNaN(dateObj.getTime())) {
+                        val = dateObj.toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                        });
+                    }
+                }
+                obj[headers[j]] = val;
+            }
+            result.push(obj);
+        }
+        return result;
+    }
+
+    fetch('LA28 SCHEDULE - RAW Schedule by Time Slot.csv')
+        .then(response => response.text())
+        .then(data => {
+            schedule = parseCSV(data);
+            populateFilters();
+            renderSchedule();
+            renderPlan();
+        })
+        .catch(err => console.error("Error loading schedule CSV:", err));
+
+    function populateFilters() {
+        const sports = [...new Set(schedule.map(s => s["Sport"]).filter(Boolean))].sort();
+        const zones = [...new Set(schedule.map(s => s["Zone"]).filter(Boolean))].sort();
+
+        let dates = [...new Set(schedule.map(s => s["Date"]).filter(Boolean))];
+        dates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+
+        const addOptions = (selectId, items) => {
+            const select = document.getElementById(selectId);
+            items.forEach(item => {
+                let opt = document.createElement('option');
+                opt.value = item;
+                opt.textContent = item;
+                select.appendChild(opt);
+            });
+        };
+
+        addOptions('sportFilter', sports);
+        addOptions('zoneFilter', zones);
+        addOptions('dateFilter', dates);
+    }
+
+    function setSort(column) {
+        if (currentSort.column === column) {
+            currentSort.asc = !currentSort.asc;
+        } else {
+            currentSort.column = column;
+            currentSort.asc = true;
+        }
+        renderSchedule();
+    }
+
+    function highlightText(text, query) {
+        if (!text) return "";
+        if (!query) return text;
+        const regex = new RegExp(`(${query})`, 'gi');
+        return text.replace(regex, '<span class="highlight">$1</span>');
+    }
+
+    function renderSchedule() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const sportFilter = document.getElementById('sportFilter').value;
+        const zoneFilter = document.getElementById('zoneFilter').value;
+        const dateFilter = document.getElementById('dateFilter').value;
+
+        let filtered = schedule.filter(s => {
+            const matchesQuery = Object.values(s).some(val =>
+                String(val).toLowerCase().includes(query)
+            );
+            const matchesSport = sportFilter === "" || s["Sport"] === sportFilter;
+            const matchesZone = zoneFilter === "" || s["Zone"] === zoneFilter;
+            const matchesDate = dateFilter === "" || s["Date"] === dateFilter;
+
+            return matchesQuery && matchesSport && matchesZone && matchesDate;
+        });
+
+        filtered.sort((a, b) => {
+            let valA = a[currentSort.column] || "";
+            let valB = b[currentSort.column] || "";
+
+            if (currentSort.column === 'Date') {
+                valA = new Date(valA).getTime();
+                valB = new Date(valB).getTime();
+            } else if (currentSort.column === 'Start Time' || currentSort.column === 'End Time') {
+                valA = valA.padStart(5, '0');
+                valB = valB.padStart(5, '0');
+            }
+
+            if (valA < valB) return currentSort.asc ? -1 : 1;
+            if (valA > valB) return currentSort.asc ? 1 : -1;
+            return 0;
+        });
+
+        const tbody = document.getElementById('scheduleBody');
+        tbody.innerHTML = '';
+
+        filtered.forEach(s => {
+            if (!s["Session Code"]) return;
+
+            const isAdded = myPlan.some(p => p["Session Code"] === s["Session Code"]);
+            const tr = document.createElement('tr');
+
+            let descHtml = (s["Session Description"] || "").replace(/\|/g, '<br>').replace(/\n/g, '<br>');
+            if(query) descHtml = highlightText(descHtml, query);
+
+            tr.innerHTML = `
+                <td>${highlightText(s["Date"], query)}</td>
+                <td>${highlightText(s["Start Time"], query)} - ${highlightText(s["End Time"], query)}</td>
+                <td><strong>${highlightText(s["Sport"], query)}</strong></td>
+                <td>${highlightText(s["Zone"], query)}<br><small>${highlightText(s["Venue"], query)}</small></td>
+                <td>${descHtml}</td>
+                <td>
+                    ${isAdded
+                        ? `<button class="remove-btn" onclick="removeFromPlan('${s["Session Code"]}')">Remove</button>`
+                        : `<button class="add-btn" onclick="addToPlan('${s["Session Code"]}')">Add</button>`
+                    }
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function addToPlan(sessionCode) {
+        const session = schedule.find(s => s["Session Code"] === sessionCode);
+        if (session && !myPlan.some(p => p["Session Code"] === sessionCode)) {
+            myPlan.push(session);
+            saveAndRenderPlan();
+        }
+    }
+
+    function removeFromPlan(sessionCode) {
+        myPlan = myPlan.filter(p => p["Session Code"] !== sessionCode);
+        saveAndRenderPlan();
+    }
+
+    function clearPlan() {
+        if (confirm("Are you sure you want to clear your entire plan?")) {
+            myPlan = [];
+            saveAndRenderPlan();
+        }
+    }
+
+    function saveAndRenderPlan() {
+        myPlan.sort((a, b) => {
+            const dateA = new Date(a["Date"]).getTime();
+            const dateB = new Date(b["Date"]).getTime();
+            if (dateA !== dateB) return dateA - dateB;
+            return a["Start Time"].padStart(5, '0').localeCompare(b["Start Time"].padStart(5, '0'));
+        });
+
+        localStorage.setItem('la28_plan', JSON.stringify(myPlan));
+        renderPlan();
+        renderSchedule();
+        checkWarnings();
+    }
+
+    function renderPlan() {
+        const container = document.getElementById('myPlanList');
+        container.innerHTML = '';
+
+        if (myPlan.length === 0) {
+            container.innerHTML = '<p>No events added yet. Start searching!</p>';
+            return;
+        }
+
+        myPlan.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'plan-item';
+            div.innerHTML = `
+                <div class="plan-details">
+                    <h4>${p["Sport"]} - ${p["Session Type"]}</h4>
+                    <p><strong>${p["Date"]}</strong> | ${p["Start Time"]} - ${p["End Time"]}</p>
+                    <p>📍 ${p["Venue"]} (${p["Zone"]})</p>
+                    <div class="badges">
+                        <span class="badge">${p["Session Code"]}</span>
+                    </div>
+                </div>
+                <button class="remove-btn" onclick="removeFromPlan('${p["Session Code"]}')">X</button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function timeToMinutes(timeStr) {
+        if (!timeStr) return 0;
+        const parts = timeStr.replace(/[^\d:]/g, '').split(':');
+        if (parts.length < 2) return 0;
+        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    }
+
+    function checkWarnings() {
+        const overlapBox = document.getElementById('overlapWarning');
+        const overlapDetails = document.getElementById('overlapDetails');
+        const zoneBox = document.getElementById('zoneWarning');
+        const zoneDetails = document.getElementById('zoneDetails');
+
+        let hasOverlap = false;
+        let overlapMsgs = [];
+        let hasZoneIssue = false;
+        let zoneMsgs = [];
+
+        const byDate = myPlan.reduce((acc, curr) => {
+            if (!acc[curr["Date"]]) acc[curr["Date"]] = [];
+            acc[curr["Date"]].push(curr);
+            return acc;
+        }, {});
+
+        for (const [date, events] of Object.entries(byDate)) {
+            const zones = [...new Set(events.map(e => e["Zone"]))];
+            if (zones.length > 1) {
+                hasZoneIssue = true;
+                zoneMsgs.push(`${date}: You are traveling between ${zones.join(' and ')}.`);
+            }
+
+            for (let i = 0; i < events.length - 1; i++) {
+                const currentEnd = timeToMinutes(events[i]["End Time"]);
+                const nextStart = timeToMinutes(events[i+1]["Start Time"]);
+
+                if (nextStart < currentEnd) {
+                    hasOverlap = true;
+                    overlapMsgs.push(`${date}: ${events[i]["Sport"]} overlaps with ${events[i+1]["Sport"]}.`);
+                }
+            }
+        }
+
+        if (hasOverlap) {
+            overlapBox.classList.add('active');
+            overlapDetails.innerHTML = overlapMsgs.join('<br>');
+        } else {
+            overlapBox.classList.remove('active');
+        }
+
+        if (hasZoneIssue) {
+            zoneBox.classList.add('active');
+            zoneDetails.innerHTML = zoneMsgs.join('<br>');
+        } else {
+            zoneBox.classList.remove('active');
+        }
+    }
+
+    function exportPlan() {
+        if (myPlan.length === 0) return alert("Your plan is empty!");
+
+        const headers = ["Date", "Start Time", "End Time", "Sport", "Zone", "Venue", "Session Code", "Session Description"];
+        const rows = myPlan.map(p => [
+            p["Date"], p["Start Time"], p["End Time"], p["Sport"],
+            p["Zone"], p["Venue"], p["Session Code"],
+            p["Session Description"].replace(/\|/g, " - ").replace(/\n/g, " - ")
+        ]);
+
+        let csvContent = "data:text/csv;charset=utf-8,"
+            + headers.join(",") + "\n"
+            + rows.map(e => e.map(field => `"${field}"`).join(",")).join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "LA28_My_Ticket_Plan.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    checkWarnings();
+</script>
+</body>
+</html>
