@@ -25,6 +25,8 @@
             --badge-bg: #333333;
         }
 
+        *, *::before, *::after { box-sizing: border-box; }
+
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             margin: 0;
@@ -127,6 +129,27 @@
         button.remove-btn { background-color: var(--badge-bg); color: var(--text-color); padding: 0.5rem; font-size: 0.8rem; }
         button.remove-btn:hover { background-color: #ffcccc; color: red; }
 
+        body.dark-mode button.remove-btn {
+            background-color: #5a2528;
+            color: #ffb3b8;
+            border-color: #884444;
+        }
+        body.dark-mode button.remove-btn:hover {
+            background-color: #7a3338;
+            color: #ffffff;
+            border-color: #aa5555;
+        }
+
+        body.dark-mode button.add-btn {
+            background-color: var(--la-blue);
+            color: #000;
+            border-color: #00c4bd;
+        }
+        body.dark-mode button.add-btn:hover {
+            background-color: #00c4bd;
+            color: #000;
+        }
+
         .plan-actions {
             display: flex;
             justify-content: space-between;
@@ -188,6 +211,156 @@
         .plan-details p { margin: 0.2rem 0; font-size: 0.85rem; opacity: 0.8; }
         .badges { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
         .badge { background: var(--badge-bg); padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold;}
+
+        .plan-toggle { display: none; cursor: pointer; justify-content: space-between; align-items: center; font-size: 1.1rem; font-weight: bold; }
+        .plan-toggle-icons { display: flex; gap: 0.5rem; align-items: center; }
+
+        /* Chevron: down = expanded (tap to minimize), up = collapsed (tap to expand) */
+        .plan-collapse-triangle {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 0.35em solid transparent;
+            border-right: 0.35em solid transparent;
+            border-top: 0.48em solid currentColor;
+            transition: transform 0.25s ease;
+            flex-shrink: 0;
+            align-self: center;
+            opacity: 0.85;
+        }
+
+        .plan-panel.collapsed .plan-collapse-triangle {
+            transform: rotate(180deg);
+        }
+        .icon-badge { background: var(--la-pink); color: white; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.8rem; display: none; }
+        .icon-badge.zone { background: var(--la-yellow); color: black; }
+        .table-responsive {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .schedule-mobile-sort {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .schedule-mobile-sort label {
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .schedule-mobile-sort select {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .schedule-mobile-sort .mobile-sort-dir-btn {
+            flex-shrink: 0;
+            padding: 0.65rem 0.85rem;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            header { flex-direction: column; text-align: center; gap: 1rem; padding: 1rem; }
+            header > button { width: 100%; max-width: 280px; }
+            .container { flex-direction: column; padding: 1rem; gap: 1rem; min-width: 0; }
+            .filters { flex-direction: column; }
+            input, select { width: 100%; min-width: 0; }
+            .schedule-panel { flex: none; padding-bottom: 4rem; min-width: 0; max-width: 100%; }
+            .table-responsive { overflow-x: visible; }
+            /* Card rows on small screens — avoids squeezed columns / character-by-character breaks */
+            #scheduleTable thead {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
+            #scheduleTable {
+                width: 100%;
+                font-size: 0.9rem;
+                border-collapse: separate;
+                border-spacing: 0;
+            }
+            #scheduleTable tbody tr {
+                display: block;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                margin-bottom: 0.85rem;
+                overflow: hidden;
+                background: var(--la-white);
+            }
+            #scheduleTable tbody td {
+                display: block;
+                width: 100%;
+                padding: 0.65rem 0.85rem;
+                border: none;
+                border-bottom: 1px solid var(--border-color);
+                text-align: left;
+                overflow-wrap: break-word;
+                word-break: normal;
+            }
+            #scheduleTable tbody td:last-child {
+                border-bottom: none;
+            }
+            #scheduleTable tbody td::before {
+                content: attr(data-label);
+                display: block;
+                font-size: 0.68rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                opacity: 0.72;
+                margin-bottom: 0.35rem;
+            }
+            #scheduleTable tbody td.schedule-cell-desc::before {
+                margin-bottom: 0.45rem;
+            }
+            #scheduleTable tbody td.schedule-cell-action::before {
+                margin-bottom: 0.5rem;
+            }
+            #scheduleTable .add-btn,
+            #scheduleTable .remove-btn {
+                width: 100%;
+                padding: 0.65rem 0.75rem;
+                font-size: 0.9rem;
+            }
+            .plan-panel {
+                position: fixed;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                max-width: 100%;
+                z-index: 1000;
+                border-radius: 16px 16px 0 0;
+                margin: 0;
+                height: auto;
+                max-height: 85vh;
+                display: flex;
+                flex-direction: column;
+                transition: max-height 0.3s ease;
+                box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+                border-top: 1px solid var(--border-color);
+            }
+            .plan-panel.collapsed { max-height: 4rem; overflow: hidden; }
+            .plan-panel.collapsed .plan-content { display: none; }
+            .plan-panel:not(.collapsed) .plan-content { flex: 1; min-height: 0; overflow-y: auto; margin-top: 1rem; padding-bottom: 2rem; }
+            .plan-toggle { display: flex; padding: 0.5rem 0; flex-shrink: 0; }
+            .plan-item { flex-direction: column; gap: 0.75rem; min-width: 0; }
+            .plan-item .remove-btn { align-self: flex-end; }
+            .schedule-mobile-sort { display: flex; }
+        }
     </style>
 </head>
 <body>
@@ -219,6 +392,17 @@
             </select>
         </div>
 
+        <div class="schedule-mobile-sort" aria-label="Sort schedule">
+            <label for="scheduleMobileSortColumn">Sort by</label>
+            <select id="scheduleMobileSortColumn" onchange="onScheduleMobileSortColumn()">
+                <option value="Date">Date</option>
+                <option value="Start Time">Start time</option>
+                <option value="Sport">Sport</option>
+            </select>
+            <button type="button" class="mobile-sort-dir-btn" id="scheduleMobileSortDir" onclick="toggleScheduleSortDirection()" aria-label="Toggle sort direction">A → Z</button>
+        </div>
+
+        <div class="table-responsive">
         <table id="scheduleTable">
             <thead>
             <tr>
@@ -232,9 +416,19 @@
             </thead>
             <tbody id="scheduleBody"></tbody>
         </table>
+        </div>
     </div>
 
-    <div class="panel plan-panel">
+    <div class="panel plan-panel collapsed" id="planPanel">
+        <div class="plan-toggle" onclick="document.getElementById('planPanel').classList.toggle('collapsed')">
+            <span>📋 My Plan (<span id="planCount">0</span>)</span>
+            <div class="plan-toggle-icons">
+                <span id="overlapIcon" class="icon-badge" title="Overlaps">⏱️ <span id="overlapBadgeCount">0</span></span>
+                <span id="zoneIcon" class="icon-badge zone" title="Zone Conflicts">🗺️ <span id="zoneBadgeCount">0</span></span>
+                <span class="plan-collapse-triangle" aria-hidden="true"></span>
+            </div>
+        </div>
+        <div class="plan-content">
         <div class="plan-actions">
             <h2>My Plan</h2>
             <div class="btn-group">
@@ -254,6 +448,7 @@
         </div>
 
         <div id="myPlanList"></div>
+        </div>
     </div>
 </div>
 
@@ -334,6 +529,7 @@
             populateFilters();
             renderSchedule();
             renderPlan();
+            checkWarnings();
         })
         .catch(err => console.error("Error loading schedule CSV:", err));
 
@@ -366,6 +562,30 @@
             currentSort.column = column;
             currentSort.asc = true;
         }
+        renderSchedule();
+    }
+
+    function syncScheduleMobileSortUI() {
+        const sel = document.getElementById('scheduleMobileSortColumn');
+        const dirBtn = document.getElementById('scheduleMobileSortDir');
+        if (!sel || !dirBtn) return;
+        const mobileCols = ['Date', 'Start Time', 'Sport'];
+        sel.value = mobileCols.includes(currentSort.column) ? currentSort.column : 'Date';
+        dirBtn.textContent = currentSort.asc ? 'A → Z' : 'Z → A';
+        dirBtn.setAttribute('aria-label', currentSort.asc ? 'Sort ascending' : 'Sort descending');
+    }
+
+    function onScheduleMobileSortColumn() {
+        const col = document.getElementById('scheduleMobileSortColumn').value;
+        if (currentSort.column !== col) {
+            currentSort.column = col;
+            currentSort.asc = true;
+        }
+        renderSchedule();
+    }
+
+    function toggleScheduleSortDirection() {
+        currentSort.asc = !currentSort.asc;
         renderSchedule();
     }
 
@@ -423,20 +643,22 @@
             if(query) descHtml = highlightText(descHtml, query);
 
             tr.innerHTML = `
-                <td>${highlightText(s["Date"], query)}</td>
-                <td>${highlightText(s["Start Time"], query)} - ${highlightText(s["End Time"], query)}</td>
-                <td><strong>${highlightText(s["Sport"], query)}</strong></td>
-                <td>${highlightText(s["Zone"], query)}<br><small>${highlightText(s["Venue"], query)}</small></td>
-                <td>${descHtml}</td>
-                <td>
+                <td data-label="Date">${highlightText(s["Date"], query)}</td>
+                <td data-label="Time">${highlightText(s["Start Time"], query)} - ${highlightText(s["End Time"], query)}</td>
+                <td data-label="Sport"><strong>${highlightText(s["Sport"], query)}</strong></td>
+                <td data-label="Zone">${highlightText(s["Zone"], query)}<br><small>${highlightText(s["Venue"], query)}</small></td>
+                <td class="schedule-cell-desc" data-label="Session description">${descHtml}</td>
+                <td class="schedule-cell-action" data-label="Action">
                     ${isAdded
-                        ? `<button class="remove-btn" onclick="removeFromPlan('${s["Session Code"]}')">Remove</button>`
-                        : `<button class="add-btn" onclick="addToPlan('${s["Session Code"]}')">Add</button>`
+                        ? `<button type="button" class="remove-btn" onclick="removeFromPlan('${s["Session Code"]}')">Remove</button>`
+                        : `<button type="button" class="add-btn" onclick="addToPlan('${s["Session Code"]}')">Add</button>`
                     }
                 </td>
             `;
             tbody.appendChild(tr);
         });
+
+        syncScheduleMobileSortUI();
     }
 
     function addToPlan(sessionCode) {
@@ -477,6 +699,7 @@
         const container = document.getElementById('myPlanList');
         container.innerHTML = '';
 
+        document.getElementById('planCount').innerText = myPlan.length;
         if (myPlan.length === 0) {
             container.innerHTML = '<p>No events added yet. Start searching!</p>';
             return;
@@ -545,15 +768,25 @@
         if (hasOverlap) {
             overlapBox.classList.add('active');
             overlapDetails.innerHTML = overlapMsgs.join('<br>');
+            document.getElementById('overlapIcon').style.display = 'inline-block';
+            document.getElementById('overlapBadgeCount').innerText = overlapMsgs.length;
         } else {
             overlapBox.classList.remove('active');
+            overlapDetails.innerHTML = '';
+            document.getElementById('overlapIcon').style.display = 'none';
+            document.getElementById('overlapBadgeCount').innerText = 0;
         }
 
         if (hasZoneIssue) {
             zoneBox.classList.add('active');
             zoneDetails.innerHTML = zoneMsgs.join('<br>');
+            document.getElementById('zoneIcon').style.display = 'inline-block';
+            document.getElementById('zoneBadgeCount').innerText = zoneMsgs.length;
         } else {
             zoneBox.classList.remove('active');
+            zoneDetails.innerHTML = '';
+            document.getElementById('zoneIcon').style.display = 'none';
+            document.getElementById('zoneBadgeCount').innerText = 0;
         }
     }
 
@@ -582,5 +815,6 @@
 
     checkWarnings();
 </script>
+<script src="../js/Gtrack.js"></script>
 </body>
 </html>
