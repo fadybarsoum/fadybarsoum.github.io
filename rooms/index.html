@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Trip Room Planner</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; padding: 20px; }
+  h1 { text-align: center; margin-bottom: 24px; font-size: 1.6rem; color: #1a1a2e; }
+
+  .dashboard {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;
+    max-width: 900px; margin: 0 auto 20px; padding: 16px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .stat { text-align: center; padding: 10px; }
+  .stat .value { font-size: 1.8rem; font-weight: 700; color: #4361ee; }
+  .stat .label { font-size: 0.78rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+  .stat.maybe .value { color: #e07c24; }
+
+  .kid-age-control {
+    max-width: 900px; margin: 0 auto 20px; padding: 16px 24px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .kid-age-control label { font-weight: 600; white-space: nowrap; }
+  .kid-age-control input[type=range] { flex: 1; min-width: 120px; accent-color: #4361ee; }
+  .kid-age-control .age-val { font-weight: 700; color: #4361ee; min-width: 60px; }
+
+  .families { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+  .family-card {
+    background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 20px; position: relative;
+  }
+  .family-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .family-name-input {
+    font-size: 1.1rem; font-weight: 600; border: none; border-bottom: 2px solid transparent; padding: 4px 2px; background: transparent; outline: none; min-width: 140px;
+  }
+  .family-name-input:focus { border-bottom-color: #4361ee; }
+  .family-name-input::placeholder { color: #aaa; }
+
+  .split-toggle { display: flex; align-items: center; gap: 6px; margin-left: auto; font-size: 0.82rem; color: #555; }
+  .split-toggle input[type=checkbox] { accent-color: #4361ee; width: 16px; height: 16px; }
+
+  .rooms-assign { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #555; }
+  .rooms-assign select { border: 1px solid #ccc; border-radius: 6px; padding: 2px 6px; font-size: 0.82rem; }
+
+  .members-table { width: 100%; border-collapse: collapse; }
+  .members-table th { text-align: left; font-size: 0.75rem; text-transform: uppercase; color: #888; padding: 4px 8px; border-bottom: 1px solid #eee; }
+  .members-table td { padding: 6px 8px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+  .members-table tr:last-child td { border-bottom: none; }
+  .members-table input[type=text] { border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; font-size: 0.9rem; width: 100%; }
+  .members-table input[type=number] { border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; font-size: 0.9rem; width: 70px; }
+  .members-table input[type=text]:focus, .members-table input[type=number]:focus { outline: none; border-color: #4361ee; }
+  .members-table .age-cell { position: relative; }
+  .age-badge {
+    display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 1px 6px; border-radius: 8px; margin-left: 6px; vertical-align: middle;
+  }
+  .age-badge.adult { background: #e8eaff; color: #4361ee; }
+  .age-badge.kid { background: #fff3e0; color: #e07c24; }
+
+  .maybe-check { display: flex; align-items: center; justify-content: center; }
+  .maybe-check input { accent-color: #e07c24; width: 18px; height: 18px; }
+
+  .btn-icon {
+    background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 4px; border-radius: 6px; line-height: 1;
+  }
+  .btn-icon:hover { background: #f0f0f0; }
+  .btn-icon.delete { color: #e74c3c; }
+
+  .add-member-btn {
+    background: #f0f2f5; border: 1px dashed #ccc; border-radius: 8px; padding: 8px 16px; cursor: pointer;
+    font-size: 0.85rem; color: #666; margin-top: 8px; width: 100%; text-align: center;
+  }
+  .add-member-btn:hover { background: #e8eaff; border-color: #4361ee; color: #4361ee; }
+
+  .add-family-btn {
+    background: #4361ee; color: #fff; border: none; border-radius: 10px; padding: 14px 28px;
+    font-size: 1rem; font-weight: 600; cursor: pointer; margin: 20px auto 0; display: block;
+  }
+  .add-family-btn:hover { background: #3451d1; }
+
+  .toolbar {
+    max-width: 900px; margin: 0 auto 20px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;
+  }
+  .toolbar-btn {
+    background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 8px 16px;
+    font-size: 0.85rem; cursor: pointer; color: #555; display: flex; align-items: center; gap: 6px;
+  }
+  .toolbar-btn:hover { border-color: #4361ee; color: #4361ee; }
+  .toolbar-btn.danger:hover { border-color: #e74c3c; color: #e74c3c; }
+  .save-indicator { font-size: 0.75rem; color: #999; align-self: center; }
+
+  .remove-family-btn {
+    position: absolute; top: 12px; right: 12px; background: none; border: none; cursor: pointer;
+    color: #ccc; font-size: 1.2rem; line-height: 1; padding: 4px;
+  }
+  .remove-family-btn:hover { color: #e74c3c; }
+
+  .family-stats {
+    display: flex; gap: 14px; font-size: 0.78rem; color: #888; margin-bottom: 10px; flex-wrap: wrap;
+  }
+  .family-stats span { background: #f8f8fa; padding: 2px 8px; border-radius: 6px; }
+</style>
+</head>
+<body>
+
+<h1>Family Trip Room Planner</h1>
+
+<div class="toolbar">
+  <span class="save-indicator" id="saveIndicator"></span>
+  <button class="toolbar-btn" onclick="document.getElementById('csvFileInput').click()">Import CSV</button>
+  <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="importCSV(this)">
+  <button class="toolbar-btn" onclick="exportCSV()">Export CSV</button>
+  <button class="toolbar-btn danger" onclick="clearAll()">Clear All</button>
+</div>
+
+<div class="kid-age-control">
+  <label for="kidAgeSlider">Kid age cutoff:</label>
+  <input type="range" id="kidAgeSlider" min="1" max="18" value="12">
+  <span class="age-val">Under <span id="kidAgeVal">12</span></span>
+  <span style="font-size:0.82rem;color:#888;">(ages below this are "kids")</span>
+</div>
+
+<div class="dashboard" id="dashboard">
+  <div class="stat"><div class="value" id="totalPeople">0</div><div class="label">Total People</div></div>
+  <div class="stat"><div class="value" id="totalAdults">0</div><div class="label">Adults</div></div>
+  <div class="stat"><div class="value" id="totalKids">0</div><div class="label">Kids</div></div>
+  <div class="stat maybe"><div class="value" id="totalMaybe">0</div><div class="label">Maybe</div></div>
+  <div class="stat"><div class="value" id="totalRooms">0</div><div class="label">Rooms (est.)</div></div>
+</div>
+
+<div class="families" id="families"></div>
+
+<button class="add-family-btn" onclick="addFamily()">+ Add Family Group</button>
+
+<script>
+const STORAGE_KEY = 'roomPlannerData';
+let families = [];
+let nextFamilyId = 1;
+let nextMemberId = 1;
+
+function getKidAge() { return parseInt(document.getElementById('kidAgeSlider').value); }
+
+function saveToStorage() {
+  const data = { families, nextFamilyId, nextMemberId, kidAge: getKidAge() };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const el = document.getElementById('saveIndicator');
+    el.textContent = 'Saved';
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => { el.textContent = ''; }, 1500);
+  } catch (e) {}
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    families = data.families || [];
+    nextFamilyId = data.nextFamilyId || 1;
+    nextMemberId = data.nextMemberId || 1;
+    if (data.kidAge) {
+      document.getElementById('kidAgeSlider').value = data.kidAge;
+      document.getElementById('kidAgeVal').textContent = data.kidAge;
+    }
+    return families.length > 0;
+  } catch (e) { return false; }
+}
+
+document.getElementById('kidAgeSlider').addEventListener('input', function() {
+  document.getElementById('kidAgeVal').textContent = this.value;
+  renderAll();
+});
+
+function addFamily() {
+  families.push({
+    id: nextFamilyId++,
+    name: '',
+    canSplit: false,
+    rooms: 1,
+    members: [{ id: nextMemberId++, name: '', age: '', maybe: false }]
+  });
+  renderAll();
+  const cards = document.querySelectorAll('.family-card');
+  const last = cards[cards.length - 1];
+  if (last) last.querySelector('.family-name-input').focus();
+}
+
+function removeFamily(fid) {
+  families = families.filter(f => f.id !== fid);
+  renderAll();
+}
+
+function addMember(fid) {
+  const fam = families.find(f => f.id === fid);
+  if (!fam) return;
+  fam.members.push({ id: nextMemberId++, name: '', age: '', maybe: false });
+  renderAll();
+  const card = document.querySelector(`[data-fid="${fid}"]`);
+  const rows = card.querySelectorAll('.members-table tbody tr');
+  const lastRow = rows[rows.length - 1];
+  if (lastRow) lastRow.querySelector('input[type=text]').focus();
+}
+
+function removeMember(fid, mid) {
+  const fam = families.find(f => f.id === fid);
+  if (!fam) return;
+  fam.members = fam.members.filter(m => m.id !== mid);
+  if (fam.members.length === 0) fam.members.push({ id: nextMemberId++, name: '', age: '', maybe: false });
+  renderAll();
+}
+
+function updateFamilyName(fid, val) {
+  const fam = families.find(f => f.id === fid);
+  if (fam) fam.name = val;
+  saveToStorage();
+}
+
+function updateMember(fid, mid, field, val) {
+  const fam = families.find(f => f.id === fid);
+  if (!fam) return;
+  const mem = fam.members.find(m => m.id === mid);
+  if (!mem) return;
+  if (field === 'age') {
+    mem.age = val === '' ? '' : Math.max(0, parseInt(val) || 0);
+  } else if (field === 'maybe') {
+    mem.maybe = val;
+  } else {
+    mem[field] = val;
+  }
+  updateDashboard();
+  updateFamilyStats(fid);
+  if (field === 'age' || field === 'name') updateAgeBadge(fid, mid);
+  saveToStorage();
+}
+
+function toggleSplit(fid, checked) {
+  const fam = families.find(f => f.id === fid);
+  if (!fam) return;
+  fam.canSplit = checked;
+  if (!checked) fam.rooms = 1;
+  renderAll();
+}
+
+function updateRooms(fid, val) {
+  const fam = families.find(f => f.id === fid);
+  if (fam) fam.rooms = parseInt(val);
+  updateDashboard();
+  saveToStorage();
+}
+
+function getMemberCounts(fam, kidAge) {
+  let adults = 0, kids = 0, maybe = 0, maybeAdults = 0, maybeKids = 0, confirmed = 0;
+  for (const m of fam.members) {
+    if (m.name === '' && m.age === '') continue;
+    const age = parseInt(m.age);
+    const isKid = !isNaN(age) && age < kidAge;
+    if (m.maybe) {
+      maybe++;
+      if (isKid) maybeKids++; else maybeAdults++;
+      continue;
+    }
+    confirmed++;
+    if (isKid) kids++; else adults++;
+  }
+  return { adults, kids, maybe, maybeAdults, maybeKids, confirmed, total: confirmed + maybe };
+}
+
+function estimateRooms(fam, kidAge) {
+  const { confirmed, maybe } = getMemberCounts(fam, kidAge);
+  if (confirmed === 0 && maybe === 0) return { min: 0, max: 0 };
+  if (fam.canSplit) {
+    const min = confirmed > 0 ? 1 : 0;
+    return { min, max: fam.rooms };
+  }
+  const min = confirmed > 0 ? 1 : 0;
+  const max = (confirmed > 0 || maybe > 0) ? 1 : 0;
+  return { min, max };
+}
+
+function rangeText(confirmed, maybeExtra) {
+  if (maybeExtra > 0) return `${confirmed}-${confirmed + maybeExtra}`;
+  return confirmed;
+}
+
+function updateDashboard() {
+  const kidAge = getKidAge();
+  let totalPeople = 0, totalAdults = 0, totalKids = 0, totalMaybe = 0, totalMaybeAdults = 0, totalMaybeKids = 0, minRooms = 0, maxRooms = 0;
+  for (const fam of families) {
+    const c = getMemberCounts(fam, kidAge);
+    totalAdults += c.adults;
+    totalKids += c.kids;
+    totalMaybe += c.maybe;
+    totalMaybeAdults += c.maybeAdults;
+    totalMaybeKids += c.maybeKids;
+    totalPeople += c.confirmed;
+    const r = estimateRooms(fam, kidAge);
+    minRooms += r.min;
+    maxRooms += r.max;
+  }
+  document.getElementById('totalPeople').textContent = rangeText(totalPeople, totalMaybe);
+  document.getElementById('totalAdults').textContent = rangeText(totalAdults, totalMaybeAdults);
+  document.getElementById('totalKids').textContent = rangeText(totalKids, totalMaybeKids);
+  document.getElementById('totalMaybe').textContent = totalMaybe;
+  document.getElementById('totalRooms').textContent = minRooms === maxRooms ? minRooms : `${minRooms}-${maxRooms}`;
+}
+
+function badgeHtmlFor(age, kidAge) {
+  const ageNum = parseInt(age);
+  if (!isNaN(ageNum) && ageNum < kidAge) {
+    return `<span class="age-badge kid" data-age="${ageNum}">kid</span>`;
+  }
+  return `<span class="age-badge adult" data-age="${isNaN(ageNum) ? '' : ageNum}">adult</span>`;
+}
+
+function updateAgeBadge(fid, mid) {
+  const fam = families.find(f => f.id === fid);
+  if (!fam) return;
+  const mem = fam.members.find(m => m.id === mid);
+  if (!mem) return;
+  const card = document.querySelector(`[data-fid="${fid}"]`);
+  if (!card) return;
+  const rows = card.querySelectorAll('.members-table tbody tr');
+  const idx = fam.members.indexOf(mem);
+  if (idx < 0 || idx >= rows.length) return;
+  const cell = rows[idx].querySelector('.age-cell');
+  const existing = cell.querySelector('.age-badge');
+  const hasContent = mem.name !== '' || mem.age !== '';
+  if (existing) existing.remove();
+  if (hasContent) cell.insertAdjacentHTML('beforeend', badgeHtmlFor(mem.age, getKidAge()));
+}
+
+function familyStatsHtml(c) {
+  const aMax = c.adults + c.maybeAdults;
+  const kMax = c.kids + c.maybeKids;
+  const aText = c.maybeAdults > 0 ? `${c.adults}-${aMax}` : c.adults;
+  const kText = c.maybeKids > 0 ? `${c.kids}-${kMax}` : c.kids;
+  return `<span>${aText} adult${aMax !== 1 ? 's' : ''}</span><span>${kText} kid${kMax !== 1 ? 's' : ''}</span>${c.maybe > 0 ? `<span>${c.maybe} maybe</span>` : ''}`;
+}
+
+function updateFamilyStats(fid) {
+  const fam = families.find(f => f.id === fid);
+  if (!fam) return;
+  const el = document.querySelector(`[data-fid="${fid}"] .family-stats`);
+  if (!el) return;
+  el.innerHTML = familyStatsHtml(getMemberCounts(fam, getKidAge()));
+}
+
+function maxRoomsFor(fam, kidAge) {
+  const { confirmed, maybe } = getMemberCounts(fam, kidAge);
+  return Math.max(1, confirmed + maybe);
+}
+
+function renderAll() {
+  const container = document.getElementById('families');
+  const kidAge = getKidAge();
+
+  container.innerHTML = families.map(fam => {
+    const c = getMemberCounts(fam, kidAge);
+    const maxR = maxRoomsFor(fam, kidAge);
+    if (fam.canSplit && fam.rooms > maxR) fam.rooms = maxR;
+
+    let roomOpts = '';
+    for (let i = 1; i <= maxR; i++) {
+      roomOpts += `<option value="${i}" ${fam.rooms === i ? 'selected' : ''}>${i}</option>`;
+    }
+
+    return `
+    <div class="family-card" data-fid="${fam.id}">
+      <button class="remove-family-btn" onclick="removeFamily(${fam.id})" title="Remove family">&times;</button>
+      <div class="family-header">
+        <input class="family-name-input" type="text" placeholder="Family name (e.g. Smiths)" value="${esc(fam.name)}" oninput="updateFamilyName(${fam.id}, this.value)">
+        <div class="split-toggle">
+          <input type="checkbox" id="split_${fam.id}" ${fam.canSplit ? 'checked' : ''} onchange="toggleSplit(${fam.id}, this.checked)">
+          <label for="split_${fam.id}">Can split rooms</label>
+        </div>
+        ${fam.canSplit ? `<div class="rooms-assign"><label>Rooms:</label><select onchange="updateRooms(${fam.id}, this.value)">${roomOpts}</select></div>` : ''}
+      </div>
+      <div class="family-stats">
+        ${familyStatsHtml(c)}
+      </div>
+      <table class="members-table">
+        <thead><tr><th>Name</th><th>Age</th><th style="text-align:center">Maybe</th><th></th></tr></thead>
+        <tbody>
+          ${fam.members.map(m => {
+            const ageNum = parseInt(m.age);
+            let badgeHtml = '';
+            if (m.name !== '' || m.age !== '') {
+              if (!isNaN(ageNum) && ageNum < kidAge) {
+                badgeHtml = `<span class="age-badge kid" data-age="${ageNum}">kid</span>`;
+              } else {
+                badgeHtml = `<span class="age-badge adult" data-age="${isNaN(ageNum) ? '' : ageNum}">adult</span>`;
+              }
+            }
+            return `<tr>
+              <td><input type="text" value="${esc(m.name)}" placeholder="Name" oninput="updateMember(${fam.id},${m.id},'name',this.value)"></td>
+              <td class="age-cell"><input type="number" min="0" max="120" value="${m.age}" placeholder="Age" oninput="updateMember(${fam.id},${m.id},'age',this.value)">${badgeHtml}</td>
+              <td class="maybe-check"><input type="checkbox" ${m.maybe ? 'checked' : ''} onchange="updateMember(${fam.id},${m.id},'maybe',this.checked)" title="Maybe attending"></td>
+              <td><button class="btn-icon delete" onclick="removeMember(${fam.id},${m.id})" title="Remove">&times;</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <button class="add-member-btn" onclick="addMember(${fam.id})">+ Add person</button>
+    </div>`;
+  }).join('');
+
+  updateDashboard();
+  saveToStorage();
+}
+
+function csvEscape(val) {
+  const s = String(val);
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function exportCSV() {
+  const rows = [['Family Group', 'Name', 'Age', 'Maybe', 'Can Split Rooms', 'Rooms Assigned']];
+  for (const fam of families) {
+    for (const m of fam.members) {
+      if (m.name === '' && m.age === '') continue;
+      rows.push([
+        fam.name || '(unnamed)',
+        m.name,
+        m.age === '' ? '' : m.age,
+        m.maybe ? 'Yes' : 'No',
+        fam.canSplit ? 'Yes' : 'No',
+        fam.canSplit ? fam.rooms : 1
+      ]);
+    }
+  }
+  const csv = rows.map(r => r.map(csvEscape).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'room-planner.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function parseCSVRow(line) {
+  const fields = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+      else if (ch === '"') inQuotes = false;
+      else current += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ',') { fields.push(current.trim()); current = ''; }
+      else current += ch;
+    }
+  }
+  fields.push(current.trim());
+  return fields;
+}
+
+function importCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return;
+    const header = parseCSVRow(lines[0]);
+    const colIdx = {};
+    header.forEach((h, i) => colIdx[h] = i);
+    const needed = ['Family Group', 'Name'];
+    if (!needed.every(n => n in colIdx)) {
+      alert('CSV must have at least "Family Group" and "Name" columns.');
+      return;
+    }
+    if (families.some(f => f.members.some(m => m.name || m.age !== ''))) {
+      if (!confirm('This will replace your current data. Continue?')) return;
+    }
+    const familyMap = new Map();
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCSVRow(lines[i]);
+      const famName = cols[colIdx['Family Group']] || '';
+      const name = cols[colIdx['Name']] || '';
+      const age = colIdx['Age'] != null ? (cols[colIdx['Age']] || '') : '';
+      const maybe = colIdx['Maybe'] != null ? (cols[colIdx['Maybe']] || '').toLowerCase() === 'yes' : false;
+      const canSplit = colIdx['Can Split Rooms'] != null ? (cols[colIdx['Can Split Rooms']] || '').toLowerCase() === 'yes' : false;
+      const rooms = colIdx['Rooms Assigned'] != null ? parseInt(cols[colIdx['Rooms Assigned']]) || 1 : 1;
+      if (!familyMap.has(famName)) {
+        familyMap.set(famName, { name: famName === '(unnamed)' ? '' : famName, canSplit, rooms, members: [] });
+      }
+      const fam = familyMap.get(famName);
+      if (canSplit) fam.canSplit = true;
+      if (rooms > fam.rooms) fam.rooms = rooms;
+      fam.members.push({
+        id: nextMemberId++,
+        name,
+        age: age === '' ? '' : (parseInt(age) || 0),
+        maybe
+      });
+    }
+    families = [];
+    for (const fam of familyMap.values()) {
+      families.push({ id: nextFamilyId++, ...fam });
+    }
+    if (families.length === 0) families.push({ id: nextFamilyId++, name: '', canSplit: false, rooms: 1, members: [{ id: nextMemberId++, name: '', age: '', maybe: false }] });
+    renderAll();
+  };
+  reader.readAsText(file);
+}
+
+function clearAll() {
+  if (!confirm('Clear all family data? This cannot be undone.')) return;
+  families = [];
+  nextFamilyId = 1;
+  nextMemberId = 1;
+  localStorage.removeItem(STORAGE_KEY);
+  addFamily();
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML.replace(/"/g, '&quot;'); }
+
+if (!loadFromStorage()) addFamily();
+else renderAll();
+</script>
+<script src="../js/Gtrack.js"></script>
+</body>
+</html>
